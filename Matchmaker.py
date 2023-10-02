@@ -1,54 +1,53 @@
 import sqlite3
-import random
 
 def connect_to_db():
     """Connect to SQLite database and return the connection."""
     conn = sqlite3.connect('statistics.db')
     return conn
 
-def get_all_players(conn):
-    """Fetch all players and their relevant data from the database."""
+def get_potential_opponents(conn):
+    """Fetch all other players except the user from the database."""
     cursor = conn.cursor()
-    cursor.execute("SELECT name, ranking, playerActivity, playerHistorical FROM players")
-    players = [{"name": row[0], "ranking": row[1], "playerActivity": row[2], "playerHistorical": row[3]} for row in cursor.fetchall()]
+    cursor.execute("SELECT name, ranking, playerActivity, playerHistorical, eloRating, playerStreak FROM players")
+    players = [
+        {"name": row[0], "ranking": row[1], "playerActivity": row[2], "playerHistorical": row[3], "eloRating": row[4], "playerStreak": row[5]}
+        for row in cursor.fetchall()
+    ]
     return players
 
-def compute_match_score(player, total_players):
-    """Calculate matchScore based on player data."""
-    player_v_rank = total_players - player['ranking']
-    return player['playerActivity'] * player_v_rank * player['playerHistorical']
+def adjust_elo_for_user(user):
+    """Modify the user's Elo rating based on additional factors."""
+    factor = user['playerActivity'] * user['playerHistorical'] * (1 + user['playerStreak']/10)
+    return user['eloRating'] + (user['eloRating'] / 10) * factor
 
-def find_opponent(all_players, player):
-    """Finds an opponent for the given player based on matchScore."""
-    total_players = len(all_players)
-    player_match_score = compute_match_score(player, total_players)
+def find_opponent_for_user(user, all_players):
+    """Finds an opponent for the app user based on adjusted Elo rating."""
+    user['adjustedElo'] = adjust_elo_for_user(user)
+    sorted_players = sorted(all_players, key=lambda x: abs(x['eloRating'] - user['adjustedElo']))
+    
+    for potential_opponent in sorted_players:
+        if potential_opponent['name'] != user['name']:
+            return potential_opponent
 
-    # Compute matchScores for all players
-    for p in all_players:
-        p['matchScore'] = compute_match_score(p, total_players)
+    return None  # No opponent found
 
-    # Filter potential opponents based on ranking difference
-    potential_opponents = [p for p in all_players 
-                           if player['ranking'] - 5 <= p['ranking'] <= player['ranking'] + 5 and p['name'] != player['name']]
+def main(user):
+    # Connect to the database
+    conn = connect_to_db()
 
-    # Sort potential opponents based on matchScore difference
-    potential_opponents.sort(key=lambda x: abs(x['matchScore'] - player_match_score))
+    # Get potential opponents from the database
+    all_players = get_potential_opponents(conn)
 
-    # Return the opponent with closest matchScore if available
-    return potential_opponents[0] if potential_opponents else None
+    # Find a suitable opponent for the user
+    opponent = find_opponent_for_user(user, all_players)
 
-# Connect to the database
-conn = connect_to_db()
+    if opponent:
+        print(f"{user['name']} (Adjusted Elo {user['adjustedElo']:.2f}) should play against {opponent['name']} (Elo {opponent['eloRating']:.2f})")
+    else:
+        print(f"No suitable opponent found for {user['name']} (Adjusted Elo {user['adjustedElo']:.2f})")
 
-# Assuming you have a player you're looking for an opponent for:
-player = {"name": "John", "ranking": 3, "playerActivity": 1.2, "playerHistorical": 0.9}  # Can also come from a DB query.
+    conn.close()  # Close the connection
 
-all_players = get_all_players(conn)
-opponent = find_opponent(all_players, player)
-
-if opponent:
-    print(f"{player['name']} (Rank {player['ranking']}, MatchScore {compute_match_score(player, len(all_players))}) should play against {opponent['name']} (Rank {opponent['ranking']}, MatchScore {opponent['matchScore']})")
-else:
-    print(f"No suitable opponent found for {player['name']} (Rank {player['ranking']})")
-
-conn.close()  # Close the connection
+# Example run
+user = {"name": "John", "eloRating": 105.0, "playerActivity": 0.9, "playerHistorical": 0.8, "playerStreak": 5}  # This represents the app user. 
+main(user)
