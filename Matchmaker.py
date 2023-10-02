@@ -48,6 +48,7 @@ def main(user):
 
     conn.close()  # Close the connection
 
+
 # Example run
 user = {"name": "John", "eloRating": 105.0, "playerActivity": 0.9, "playerHistorical": 0.8, "playerStreak": 5}  # This represents the app user. 
 main(user)
