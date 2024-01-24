@@ -1,3 +1,5 @@
 # Explicitly define SQL file language
 *.sql linguist-language=SQL
 
+*.py linguist-detectable=false
+*.sql linguist-detectable=true
