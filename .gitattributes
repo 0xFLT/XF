@@ -1,0 +1,2 @@
+# Explicitly define SQL file language
+*.sql linguist-language=SQL
