@@ -55,3 +55,5 @@ CREATE TABLE player_activity_log (
     activity_type TEXT NOT NULL,
     FOREIGN KEY (player_id) REFERENCES players (player_id)
 );
+
+
