@@ -49,6 +49,18 @@ def update_elo_ratings(player_a_name, player_b_name, margin_of_victory, conn):
 
     conn.commit()
 
+def update_player_rankings(conn):
+    """Update the rankings of all players based on their Elo ratings."""
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, eloRating FROM players ORDER BY eloRating DESC")
+    players = cursor.fetchall()
+
+    for rank, player in enumerate(players, start=1):
+        name, _ = player
+        cursor.execute("UPDATE players SET rank=? WHERE name=?", (rank, name))
+
+    conn.commit()
+
 def decay_elo_ratings(conn):
     """Apply Elo rating decay only to players who haven't played in the last 7 days.
     This function is intended to be called by a cron job on a weekly basis."""
@@ -71,7 +83,6 @@ def decay_elo_ratings(conn):
             cursor.execute("UPDATE players SET eloRating=? WHERE name=?", (updated_elo, name))
     
     conn.commit()
-
 
 # Example usage
 # Note: The decay_elo_ratings function should be called by a cron job, not during regular script execution.
