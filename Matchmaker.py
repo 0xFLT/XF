@@ -6,24 +6,19 @@ def connect_to_db():
     return conn
 
 def get_potential_opponents(conn):
-    """Fetch all other players except the user from the database."""
+    """Fetch all other players from the database."""
     cursor = conn.cursor()
-    cursor.execute("SELECT name, ranking, playerActivity, playerHistorical, eloRating, playerStreak FROM players")
+    cursor.execute("SELECT name, eloRating, rank FROM players")
     players = [
-        {"name": row[0], "ranking": row[1], "playerActivity": row[2], "playerHistorical": row[3], "eloRating": row[4], "playerStreak": row[5]}
+        {"name": row[0], "eloRating": row[1], "rank": row[2]}
         for row in cursor.fetchall()
     ]
     return players
 
-def adjust_elo_for_user(user):
-    """Modify the user's Elo rating based on additional factors."""
-    factor = user['playerActivity'] * user['playerHistorical'] * (1 + user['playerStreak']/10)
-    return user['eloRating'] + (user['eloRating'] / 10) * factor
-
 def find_opponent_for_user(user, all_players):
-    """Finds an opponent for the app user based on adjusted Elo rating."""
-    user['adjustedElo'] = adjust_elo_for_user(user)
-    sorted_players = sorted(all_players, key=lambda x: abs(x['eloRating'] - user['adjustedElo']))
+    """Finds an opponent for the app user based on Elo rating."""
+    # Sorting players by the difference in Elo rating
+    sorted_players = sorted(all_players, key=lambda x: abs(x['eloRating'] - user['eloRating']))
     
     for potential_opponent in sorted_players:
         if potential_opponent['name'] != user['name']:
@@ -38,17 +33,20 @@ def main(user):
     # Get potential opponents from the database
     all_players = get_potential_opponents(conn)
 
+    # NOTE: A 24-hour waiting period should be implemented outside this script, typically at the application level.
+
     # Find a suitable opponent for the user
     opponent = find_opponent_for_user(user, all_players)
 
     if opponent:
-        print(f"{user['name']} (Adjusted Elo {user['adjustedElo']:.2f}) should play against {opponent['name']} (Elo {opponent['eloRating']:.2f})")
+        print(f"{user['name']} (Elo {user['eloRating']}) should play against {opponent['name']} (Elo {opponent['eloRating']})")
     else:
-        print(f"No suitable opponent found for {user['name']} (Adjusted Elo {user['adjustedElo']:.2f})")
+        print(f"No suitable opponent found for {user['name']} (Elo {user['eloRating']})")
 
     conn.close()  # Close the connection
 
 
+
 # Example run
-user = {"name": "John", "eloRating": 105.0, "playerActivity": 0.9, "playerHistorical": 0.8, "playerStreak": 5}  # This represents the app user. 
+user = {"name": "John", "eloRating": 105, "rank": 20}  # This represents the app user.
 main(user)
