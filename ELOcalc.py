@@ -52,7 +52,7 @@ def update_elo_ratings(player_a_name, player_b_name, margin_of_victory, conn):
 def decay_elo_ratings(conn):
     """Apply Elo rating decay only to players who haven't played in the last 7 days.
     This function is intended to be called by a cron job on a weekly basis."""
-    decay_factor = 0.999  # 0.1% decay
+    decay_factor = 0.998  # 0.2% decay
     cursor = conn.cursor()
     cursor.execute("SELECT name, eloRating, last_played_date FROM players")
     
