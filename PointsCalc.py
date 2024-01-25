@@ -8,9 +8,16 @@ def connect_to_db():
 def get_total_players(conn):
     """Retrieve the total number of players from the database."""
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM players")
+    cursor.execute("SELECT COUNT(*) FROM players WHERE paying = 1")  # Assuming a 'paying' column indicates paying players
     total_players = cursor.fetchone()[0]
     return total_players
+
+def get_player_rank(player_id, conn):
+    """Retrieve the rank of a player from the database."""
+    cursor = conn.cursor()
+    cursor.execute("SELECT rank FROM players WHERE player_id=?", (player_id,))
+    rank = cursor.fetchone()[0]
+    return rank
 
 def calculate_points(R_A, rank, total_players):
     """Calculate points based on Elo Rating and Rank."""
@@ -24,14 +31,17 @@ def update_points(player_a_id, player_b_id, player_a_wins, conn):
     """Update points for players after a match, using old Elo ratings and assigning higher points to the winner."""
     cursor = conn.cursor()
 
-    # Get the total number of players on the course
+    # Get the total number of paying players on the course
     total_players = get_total_players(conn)
 
-    # Fetch old ratings and ranks
-    cursor.execute("SELECT eloRating, rank FROM players WHERE player_id=?", (player_a_id,))
-    old_rating_A, rank_A = cursor.fetchone()
-    cursor.execute("SELECT eloRating, rank FROM players WHERE player_id=?", (player_b_id,))
-    old_rating_B, rank_B = cursor.fetchone()
+    # Fetch old ratings and current ranks
+    cursor.execute("SELECT eloRating FROM players WHERE player_id=?", (player_a_id,))
+    old_rating_A = cursor.fetchone()[0]
+    rank_A = get_player_rank(player_a_id, conn)
+
+    cursor.execute("SELECT eloRating FROM players WHERE player_id=?", (player_b_id,))
+    old_rating_B = cursor.fetchone()[0]
+    rank_B = get_player_rank(player_b_id, conn)
 
     # Calculate Points using old Elo ratings
     points_A = calculate_points(old_rating_A, rank_A, total_players)
