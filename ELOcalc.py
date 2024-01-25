@@ -62,7 +62,7 @@ def update_player_rankings(conn):
     conn.commit()
 
 def decay_elo_ratings(conn):
-    """Apply Elo rating decay only to players who haven't played in the last 7 days.
+    """Apply Elo rating decay only to players who haven't played in the last 7 days and have an Elo rating above 100.
     This function is intended to be called by a cron job on a weekly basis."""
     decay_factor = 0.998  # 0.2% decay
     cursor = conn.cursor()
@@ -77,8 +77,8 @@ def decay_elo_ratings(conn):
         # Convert last played date from string to date object
         last_played_date = datetime.datetime.strptime(last_played_date, '%Y-%m-%d').date()
 
-        # Check if the player hasn't played in the last 7 days
-        if last_played_date < seven_days_ago:
+        # Check if the player hasn't played in the last 7 days and has an Elo rating above 100
+        if last_played_date < seven_days_ago and eloRating > 100:
             updated_elo = eloRating * decay_factor
             cursor.execute("UPDATE players SET eloRating=? WHERE name=?", (updated_elo, name))
     
