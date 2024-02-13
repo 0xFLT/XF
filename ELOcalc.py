@@ -6,6 +6,7 @@ K_BASE = 3
 SCALING_FACTOR = 20
 BONUS_FACTOR = 1.5
 
+
 def connect_to_db():
     """Connect to SQLite database and return the connection."""
     conn = sqlite3.connect('statistics.db')
@@ -89,3 +90,5 @@ def decay_elo_ratings(conn):
 # conn = connect_to_db()
 # decay_elo_ratings(conn)
 # conn.close()
+
+
