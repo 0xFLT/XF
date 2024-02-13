@@ -46,7 +46,7 @@ def main(user):
     conn.close()  # Close the connection
 
 
-
 # Example run
 user = {"name": "John", "eloRating": 105, "rank": 20}  # This represents the app user.
 main(user)
+
