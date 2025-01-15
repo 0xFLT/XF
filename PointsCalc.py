@@ -8,7 +8,7 @@ def connect_to_db():
 def get_total_players(conn):
     """Retrieve the total number of players from the database."""
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM players WHERE paying = 1")  # Assuming a 'paying' column indicates paying players
+    cursor.execute("SELECT COUNT(*) FROM totalActive WHERE activep = 1")  # Assuming a 'totalActive' column indicates number of players that chose that home course on profile.
     total_players = cursor.fetchone()[0]
     return total_players
 
